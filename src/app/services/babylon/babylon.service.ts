@@ -157,7 +157,7 @@ export class BabylonService {
       ImageProcessingConfiguration.TONEMAPPING_STANDARD;
 
     this.effects.push(fxaa, sharpen);
-    console.log('Effects applied', this.effects);
+    console.debug('Effects applied', this.effects);
 
     // Initialize empty, otherwise we would need to check against
     // undefined in strict mode

@@ -57,9 +57,9 @@ const createOrClonePBRMaterial = (
 const patchMeshPBR = (mesh: AbstractMesh, scene: Scene) => {
   const material = mesh.material as StandardMaterial | PBRMaterial | null;
   if (material instanceof PBRMaterial) {
-    console.log('Material is PBRMaterial. Skipping...');
+    console.debug('Material is PBRMaterial. Skipping...');
   } else if (material instanceof StandardMaterial) {
-    console.log('Material is StandardMaterial. Patching to PBRMaterial');
+    console.debug('Material is StandardMaterial. Patching to PBRMaterial');
     const pbrMaterial = createOrClonePBRMaterial(scene, material);
 
     // Diffuse / Albedo
@@ -82,7 +82,7 @@ const patchMeshPBR = (mesh: AbstractMesh, scene: Scene) => {
 
     mesh.material = pbrMaterial;
   } else {
-    console.log('No Material. Creating default Material');
+    console.debug('No Material. Creating default Material');
     const pbrMaterial = createOrClonePBRMaterial(scene);
     mesh.material = pbrMaterial;
   }
@@ -103,7 +103,7 @@ export const load3DEntity = (rootUrl: string, extension: string, scene: Scene) =
     extension.toLowerCase(),
   )
     .then(result => {
-      console.log(result);
+      console.debug(result);
       result.meshes.forEach(mesh => patchMeshPBR(mesh, scene));
       return result;
     })
@@ -294,7 +294,6 @@ const createAudioScene = (audio: Sound, scene: Scene, cubeMeshes: I3DEntityConta
     mesh.actionManager = new ActionManager(scene);
     mesh.actionManager.registerAction(
       new ExecuteCodeAction(ActionManager.OnPickTrigger, () => {
-        console.log('click');
         audio.isPlaying ? audio.stop() : audio.play(0, timeSlider.value);
       }),
     );

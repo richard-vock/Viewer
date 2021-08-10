@@ -62,7 +62,7 @@ export class EntitySettingsService {
       const settings = arr[0];
       const meshes = arr[1];
       this.entitySettings = settings;
-      console.log('actual settings', this.entitySettings);
+      console.debug('actual settings', this.entitySettings);
       this.meshes = meshes;
       requestAnimationFrame(() =>
         this.setUpSettings()
