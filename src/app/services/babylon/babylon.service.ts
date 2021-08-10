@@ -54,6 +54,8 @@ import {
   beforeVideoRender,
 } from './strategies/render-strategies';
 
+import { PotreeService } from '../potree/potree.service';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -122,7 +124,9 @@ export class BabylonService {
     @Inject(DOCUMENT) private document: HTMLDocument,
     private factoryResolver: ComponentFactoryResolver,
     private injector: Injector,
+    private potree: PotreeService,
   ) {
+    BABYLON.Logger.LogLevels = BABYLON.Logger.NoneLogLevel;
     this.canvas.id = 'renderCanvas';
     this.engine = new Engine(this.canvas, true, {
       audioEngine: true,
@@ -157,7 +161,7 @@ export class BabylonService {
       ImageProcessingConfiguration.TONEMAPPING_STANDARD;
 
     this.effects.push(fxaa, sharpen);
-    console.debug('Effects applied', this.effects);
+    // console.log('Effects applied', this.effects);
 
     // Initialize empty, otherwise we would need to check against
     // undefined in strict mode
@@ -314,6 +318,35 @@ export class BabylonService {
     // TODO: manage mediaType via Observable
     this.mediaType = mediaType;
     switch (mediaType) {
+      case 'cloud':
+        return this.potree.loadEntity(rootUrl, this.scene).then(
+          cloud => {
+            if (cloud) {
+              // let box = cloud.toTreeNode(cloud.root, null, wiremat, this.scene).sceneNode;
+              // if (box) {
+              //     this.entityContainer = {
+              //         meshes: [box,],
+              //         particleSystems: [],
+              //         skeletons: [],
+              //         animationGroups: []
+              //     }
+              //     // Disable Tone-Mapping
+              // }
+              this.scene.imageProcessingConfiguration.toneMappingEnabled = false;
+              let updateCloud = () => {
+                this.potree.update(cloud,
+                                   this.scene,
+                                   this.getActiveCamera(),
+                                   this.canvas.height);
+              }
+              this.scene.registerBeforeRender(updateCloud);
+              // throw new Error('Not implemented yet');
+            } else {
+              throw new Error('No pointcloud result');
+            }
+          }
+        );
+        break;
       case 'audio':
         return loadAudio(rootUrl, this.scene, this.audioContainer, this.entityContainer).then(
           result => {

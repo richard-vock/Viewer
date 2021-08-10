@@ -122,7 +122,6 @@ export class ProcessingService {
   }
 
   public updateActiveEntity(entity: IEntity | undefined) {
-    console.debug('New loaded Entity:', entity);
     this._currentEntity = entity;
     this.entity.next(this._currentEntity);
     if (entity?._id === 'default' || entity?._id === 'fallback') {
@@ -346,7 +345,7 @@ export class ProcessingService {
     this.backend
       .getEntity(query)
       .then(entity => {
-        console.debug('Received this Entity:', entity);
+        // console.log('Received this Entity:', entity);
 
         // Check if this is an external file
         // This can fail if the external file is not available or not reachable
@@ -415,6 +414,23 @@ export class ProcessingService {
 
         const mediaType = newEntity.mediaType;
         switch (newEntity.mediaType) {
+          case 'cloud':
+            await this.babylon
+              .loadEntity(true, url, mediaType)
+              .then(() => {
+                console.log(this.babylon.entityContainer);
+                this.updateActiveEntity(newEntity);
+                this.updateActiveEntityMeshes(
+                  this.babylon.entityContainer.meshes as Mesh[],
+                  newEntity,
+                );
+              })
+              .catch(error => {
+                console.error(error);
+                this.message.error('Connection to entity server to load entity refused.');
+                this.loadFallbackEntity();
+              });
+            break;
           case 'model':
           case 'entity':
             await this.babylon
