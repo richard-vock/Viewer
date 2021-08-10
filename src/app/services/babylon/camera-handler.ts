@@ -79,6 +79,7 @@ export const createDefaultCamera = (scene: Scene, canvas: HTMLCanvasElement) => 
     scene,
   );
   arcRotateCamera.lowerRadiusLimit = radius * 0.01;
+  arcRotateCamera.panningSensibility = 50;
   camera = arcRotateCamera;
 
   camera.minZ = radius * 0.01;
