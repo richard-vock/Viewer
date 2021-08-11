@@ -30,6 +30,7 @@ export class OctreeNode  {
   public density : number;
   public oneTimeDisposeHandlers : { ():void; }[];
   protected children : OctreeNode[] = [];
+  protected workers : Worker[] = [];
 
   private id : number;
   static numNodesLoading : number = 0;
@@ -103,6 +104,9 @@ export class OctreeNode  {
       // this.geometry.dispose();
       this.geometry = undefined;
       this.loaded = false;
+      if (!this.mesh) {
+        console.error("no mesh on dispose");
+      }
       this.parent.mesh?.removeChild(this.mesh as Mesh);
       this.mesh?.dispose();
     }
@@ -141,13 +145,20 @@ export class OctreeNode  {
         buffer = await response.arrayBuffer();
       }
 
-      const worker = new Worker('./decoder.worker', { type: 'module' });
+      if (this.workers.length === 0) {
+        // no workers left, create a new one
+        const worker = new Worker('./decoder.worker', { type: 'module' });
+        this.workers.push(worker);
+      }
+
+      const worker = this.workers.pop() as Worker;
 
       worker.onmessage = (e) => {
         let data = e.data;
         let buffers = data.attributeBuffers;
 
-        // Potree.workerPool.returnWorker(workerPath, worker);
+        // worker has finished and we got our data, so return worker to the pool for reuse
+        this.workers.push(worker);
 
         let geometry = new VertexData();
 
