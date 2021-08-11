@@ -10,6 +10,7 @@ import { Color3,
 import { BBox } from './bounding-box';
 import { PointAttribute, PointAttributes, TypenameTypeattributeMap } from './point-attributes';
 import { Pointcloud } from './pointcloud';
+import { PotreeConfig } from './config';
 
 export class OctreeNode  {
   public visible : boolean = false;
@@ -33,7 +34,7 @@ export class OctreeNode  {
   protected workers : Worker[] = [];
 
   private id : number;
-  static numNodesLoading : number = 0;
+  static numLoading : number = 0;
   static nodeCount : number = 0;
 
   constructor(public name : string,
@@ -113,12 +114,12 @@ export class OctreeNode  {
   }
 
   async load() {
-    if(this.loaded || this.loading){
+    if (OctreeNode.numLoading >= PotreeConfig.maxNodesLoading || this.loaded || this.loading) {
       return;
     }
 
     this.loading = true;
-    OctreeNode.numNodesLoading++;
+    OctreeNode.numLoading++;
 
     try{
       if(this.nodeType === 2){
@@ -183,7 +184,7 @@ export class OctreeNode  {
         this.geometry = geometry;
         this.loaded = true;
         this.loading = false;
-        OctreeNode.numNodesLoading--;
+        OctreeNode.numLoading--;
       };
 
       let pointAttributes = this.octree.pointAttributes;
@@ -210,7 +211,7 @@ export class OctreeNode  {
     }catch(e){
       this.loaded = false;
       this.loading = false;
-      OctreeNode.numNodesLoading--;
+      OctreeNode.numLoading--;
 
       console.log(`failed to load ${this.name}`);
       console.log(e);
