@@ -11,16 +11,13 @@ import { BBox } from './bounding-box';
 
 import { BinaryHeap } from './binary-heap';
 import { LRU } from './LRU';
-import { OctreeLoader } from './loader/octree-loader';
-import { AbstractOctreeNode } from './abstract-octree';
-import { CloudOctree, CloudOctreeNode } from './cloud-octree';
-import { GeometryOctreeNode } from './geometry-octree';
+import { Octree, OctreeNode } from './octree';
 import { PotreeConfig } from './config';
 
 class QueueItem {
-  constructor(public node : AbstractOctreeNode,
+  constructor(public node : OctreeNode,
               public weight : number,
-              public parent? : AbstractOctreeNode) {
+              public parent? : OctreeNode) {
               }
 }
 
@@ -33,27 +30,33 @@ export class PotreeService {
   ) {
   }
 
-  public loadEntity(
+  public loadEntity (
     rootUrl: string,
     scene : Scene,
   ) {
-    return OctreeLoader.load(rootUrl).then((result) => {
-      let geometry = result.geometry;
-      let cloud = new CloudOctree(geometry, scene);
-      return cloud;
-    });
+    return this.loadCloud(rootUrl, scene);
   }
 
-  public update(cloud : CloudOctree,
+  async loadCloud(url : string,
+                  scene : Scene) {
+    let response = await fetch(url);
+    let metadata = await response.json();
+    let octree = new Octree(url, metadata, scene);
+    await octree.root.load();
+
+    return octree;
+  }
+
+  public update(cloud : Octree,
                 scene : Scene,
                 camera : Camera,
                 canvasHeight : number) {
     let queue = new BinaryHeap<QueueItem>((x : QueueItem) => { return 1 / x.weight; });
-    queue.push(new QueueItem(cloud.root as AbstractOctreeNode, Number.MAX_VALUE));
+    queue.push(new QueueItem(cloud.root as OctreeNode, Number.MAX_VALUE));
 
-    let visibleNodes : AbstractOctreeNode[] = [];
-    let visibleGeometry  : AbstractOctreeNode[] = [];
-    let unloadedGeometry  : AbstractOctreeNode[] = [];
+    let visibleNodes : OctreeNode[] = [];
+    let visibleGeometry  : OctreeNode[] = [];
+    let unloadedGeometry  : OctreeNode[] = [];
     let numVisiblePoints = 0;
     let lowestSpacing = Infinity;
     let loadedToGPUThisFrame = 0;
@@ -86,11 +89,9 @@ export class PotreeService {
 
       numVisiblePoints += nPoints;
 
-      if (node.isGeometryNode() && (!parent || parent.isTreeNode())) {
+      if (!node.hasMesh() && (!parent || parent.hasMesh())) {
         if (node.isLoaded() && loadedToGPUThisFrame < 2) {
-          node = cloud.toTreeNode(node as GeometryOctreeNode,
-                                  (parent || undefined) as (CloudOctreeNode | undefined),
-                                  scene);
+          node.buildMesh(scene, parent);
           loadedToGPUThisFrame++;
         } else {
           unloadedGeometry.push(node);
@@ -98,11 +99,10 @@ export class PotreeService {
         }
       }
 
-      if (node.isTreeNode()) {
-        const gnode = (node as CloudOctreeNode).geometryNode;
-        this.lru.touch(gnode);
+      if (node.hasMesh()) {
+        this.lru.touch(node);
         visibleNodes.push(node);
-        cloud.visibleNodes.push(node as CloudOctreeNode);
+        // cloud.visibleNodes.push(node);
       }
 
       let children = node.getChildren();
@@ -142,7 +142,7 @@ export class PotreeService {
     }
 
     for (let i = 0; i < Math.min(PotreeConfig.maxNodesLoading, unloadedGeometry.length); i++) {
-      (unloadedGeometry[i] as GeometryOctreeNode).load();
+      unloadedGeometry[i].load();
     }
 
     // cloud.updateVisibleBounds();

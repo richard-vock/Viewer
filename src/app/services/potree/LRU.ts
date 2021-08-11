@@ -3,13 +3,13 @@ import {
 } from '@angular/core';
 
 import { PotreeConfig } from './config';
-import { GeometryOctreeNode } from './geometry-octree';
+import { OctreeNode } from './octree';
 
 export class LRUItem{
   public previous? : LRUItem;
   public next? : LRUItem;
 
-  constructor(public node : GeometryOctreeNode){
+  constructor(public node : OctreeNode){
   }
 
 }
@@ -31,11 +31,11 @@ export class LRU {
     return this.elements;
   }
 
-  contains(node : GeometryOctreeNode){
+  contains(node : OctreeNode){
     return this.items[node.getID()] == undefined;
   }
 
-  touch(node : GeometryOctreeNode){
+  touch(node : OctreeNode){
     if (!node.loaded) {
       return;
     }
@@ -86,7 +86,7 @@ export class LRU {
     }
   }
 
-  remove(node : GeometryOctreeNode){
+  remove(node : OctreeNode){
     let lruItem = this.items[node.getID()];
     if (lruItem) {
       if (this.elements === 1) {
@@ -143,25 +143,22 @@ export class LRU {
 
     while (this.numPoints > PotreeConfig.pointLoadLimit) {
       // note that the exceeded point limit implies that this.first exists
-      this.disposeDescendants(this.first?.node as GeometryOctreeNode);
+      this.disposeDescendants(this.first?.node as OctreeNode);
     }
   }
 
-  disposeDescendants(node : GeometryOctreeNode){
-    let stack : GeometryOctreeNode[] = [];
+  disposeDescendants(node : OctreeNode){
+    let stack : OctreeNode[] = [];
     stack.push(node);
     while (stack.length > 0) {
-      let current = stack.pop() as GeometryOctreeNode;
+      let current = stack.pop() as OctreeNode;
 
       current.dispose();
       this.remove(current);
 
-      for (let key in current.children) {
-        if (current.children.hasOwnProperty(key)) {
-          let child = current.children[key] as GeometryOctreeNode;
-          if (child.loaded) {
-            stack.push(child);
-          }
+      for (const child of current.getChildren()) {
+        if (child.loaded) {
+          stack.push(child);
         }
       }
     }

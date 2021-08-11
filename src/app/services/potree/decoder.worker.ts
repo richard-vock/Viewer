@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import {PointAttribute, PointAttributeTypes} from "../point-attributes";
+import {PointAttribute, PointAttributeTypes} from "./point-attributes";
 
 const typedArrayMapping : { [type: string] : any; } = {
 	"int8":   Int8Array,
