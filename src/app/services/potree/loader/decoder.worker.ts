@@ -56,9 +56,9 @@ addEventListener('message', (e) => {
 
 				let pointOffset = j * bytesPerPoint;
 
-                let x = view.getInt32(pointOffset + attributeOffset + 0, true);
-                let y = view.getInt32(pointOffset + attributeOffset + 4, true);
-                let z = view.getInt32(pointOffset + attributeOffset + 8, true);
+        let x = view.getInt32(pointOffset + attributeOffset + 0, true);
+        let y = view.getInt32(pointOffset + attributeOffset + 4, true);
+        let z = view.getInt32(pointOffset + attributeOffset + 8, true);
 
 				x = (x * scale[0]) + offset[0] - min[0];
 				y = (y * scale[1]) + offset[1] - min[1];

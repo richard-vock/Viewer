@@ -418,7 +418,6 @@ export class ProcessingService {
             await this.babylon
               .loadEntity(true, url, mediaType)
               .then(() => {
-                console.log(this.babylon.entityContainer);
                 this.updateActiveEntity(newEntity);
                 this.updateActiveEntityMeshes(
                   this.babylon.entityContainer.meshes as Mesh[],

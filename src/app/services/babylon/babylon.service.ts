@@ -322,16 +322,6 @@ export class BabylonService {
         return this.potree.loadEntity(rootUrl, this.scene).then(
           cloud => {
             if (cloud) {
-              // let box = cloud.toTreeNode(cloud.root, null, wiremat, this.scene).sceneNode;
-              // if (box) {
-              //     this.entityContainer = {
-              //         meshes: [box,],
-              //         particleSystems: [],
-              //         skeletons: [],
-              //         animationGroups: []
-              //     }
-              //     // Disable Tone-Mapping
-              // }
               this.scene.imageProcessingConfiguration.toneMappingEnabled = false;
               let updateCloud = () => {
                 this.potree.update(cloud,
