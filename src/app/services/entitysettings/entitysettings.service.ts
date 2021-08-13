@@ -5,7 +5,6 @@ import {
   Color3,
   Mesh,
   MeshBuilder,
-  Node,
   Quaternion,
   StandardMaterial,
   Tags,
