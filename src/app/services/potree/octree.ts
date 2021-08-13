@@ -1,12 +1,13 @@
-import { Color3,
+import { BoundingBox,
+         Color3,
          Mesh,
          //MeshBuilder,
          Scene,
          StandardMaterial,
-         TransformNode,
          Vector3,
          VertexData,
 } from 'babylonjs';
+import { BehaviorSubject } from 'rxjs';
 import { BBox } from './bounding-box';
 import { PointAttribute, PointAttributes, TypenameTypeattributeMap } from './point-attributes';
 import { Pointcloud } from './pointcloud';
@@ -314,6 +315,12 @@ export class OctreeNode  {
     }
     this.mesh.position = offset;
 
+    if (this.level === 0) {
+      // bounding info is used by entity settings to initialize view
+      this.octree.getAnchor().setBoundingInfo(this.mesh.getBoundingInfo());
+      this.octree.rootMesh.next(this.octree.getAnchor() as Mesh);
+    }
+
     // DEBUG bounding box rendering
     // let size = this.boundingBox.extendSize.scale(2.0);
     // let mesh = MeshBuilder.CreateBox("bbox_" + geometryNode.name,
@@ -343,7 +350,10 @@ export class Octree {
   // protected wireframeMaterial : StandardMaterial;
   // public visibleNodes : OctreeNode[] = [];
   // public visibleGeometry : any[] = [];
-  protected anchor : TransformNode;
+  protected anchor : Mesh;
+
+  public rootMesh = new BehaviorSubject<Mesh | undefined>(undefined);
+  public rootMesh$ = this.rootMesh.asObservable();
 
   constructor(public url : string,
               metadata : any,
@@ -371,7 +381,7 @@ export class Octree {
     // this.wireframeMaterial.wireframe = true;
     // this.wireframeMaterial.emissiveColor = new Color3(1, 0, 0);
 
-    this.anchor = new TransformNode("anchor", scene);
+    this.anchor = new Mesh("anchor", scene);
     this.anchor.position = this.offset.clone();
     this.anchor.rotate(Vector3.Right(), -0.5 * Math.PI);
 
@@ -385,7 +395,7 @@ export class Octree {
     this.root = root;
   }
 
-  getAnchor() : TransformNode {
+  getAnchor() : Mesh {
     return this.anchor;
   }
 

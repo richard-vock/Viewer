@@ -14,6 +14,7 @@ import {
   Engine,
   FxaaPostProcess,
   Layer,
+  Mesh,
   Scene,
   SharpenPostProcess,
   Sound,
@@ -24,6 +25,7 @@ import {
   ImageProcessingConfiguration,
   PBRMaterial,
 } from 'babylonjs';
+import { BehaviorSubject } from 'rxjs';
 import { Slider } from 'babylonjs-gui';
 // tslint:disable-next-line:no-import-side-effect
 import 'babylonjs-loaders';
@@ -77,6 +79,9 @@ export class BabylonService {
   public audioContainer: IAudioContainer;
   public imageContainer: IImageContainer;
   public entityContainer: I3DEntityContainer;
+
+  private pointcloudRoot = new BehaviorSubject<Mesh | undefined>(undefined);
+  public pointcloudRoot$ = this.pointcloudRoot.asObservable();
 
   public cameraManager = {
     getActiveCamera: this.getActiveCamera,
@@ -322,7 +327,12 @@ export class BabylonService {
         return this.potree.loadEntity(rootUrl, this.scene).then(
           cloud => {
             if (cloud) {
-              this.scene.imageProcessingConfiguration.toneMappingEnabled = false;
+              cloud.rootMesh$.subscribe((mesh) => {
+                if (mesh) {
+                  this.pointcloudRoot.next(mesh);
+                }
+              });
+              // this.scene.imageProcessingConfiguration.toneMappingEnabled = false;
               let updateCloud = () => {
                 this.potree.update(cloud,
                                    this.scene,
