@@ -108,7 +108,6 @@ export class EntitySettingsService {
     await this.calculateMinMax()
       .then(() => {
         this.initialSize = this.max.subtract(this.min);
-        console.log(`initialSize ${this.initialSize}`);
         this.processing.entityHeight = this.initialSize.y.toFixed(2);
         this.processing.entityWidth = this.initialSize.x.toFixed(2);
         this.processing.entityDepth = this.initialSize.z.toFixed(2);
@@ -129,8 +128,6 @@ export class EntitySettingsService {
       mesh.computeWorldMatrix(true);
       // see if mesh is visible or just a dummy
       const bi = mesh.getBoundingInfo();
-      console.log("bbox");
-      console.log(bi.boundingBox);
       if (bi.diagonalLength !== 0) {
         // compare min max values
         const minimum = bi.boundingBox.minimumWorld;
@@ -239,8 +236,6 @@ export class EntitySettingsService {
         diagonalLength * 1.25,
       );
       const target = this.currentCenterPoint;
-      console.log('target', target);
-      console.log('position', position);
       this.entitySettings.cameraPositionInitial = {
         position,
         target,

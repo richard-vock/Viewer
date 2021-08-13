@@ -150,8 +150,6 @@ export class ProcessingService {
   }
 
   public async updateActiveEntityMeshes(meshes: Mesh[], entity: IEntity) {
-    console.log("active Meshes");
-    console.log(meshes);
     this.annotatingFeatured = false;
     await this.setAnnotatingFeatured(entity);
     // TODO - move to babylon load: rendering groups
@@ -347,7 +345,7 @@ export class ProcessingService {
     this.backend
       .getEntity(query)
       .then(entity => {
-        // console.log('Received this Entity:', entity);
+        console.debug('Received this Entity:', entity);
 
         // Check if this is an external file
         // This can fail if the external file is not available or not reachable

@@ -1,5 +1,4 @@
-import { BoundingBox,
-         Color3,
+import { Color3,
          Mesh,
          //MeshBuilder,
          Scene,
