@@ -115,7 +115,7 @@ export const setUpCamera = (camera: ArcRotateCamera, maxSize: number, mediaType:
   camera.minZ = maxSize * 0.0001;
   camera.maxZ = radius + maxSize;
 
-  if (mediaType === 'entity' || mediaType === 'model') {
+  if (mediaType === 'cloud' || mediaType === 'entity' || mediaType === 'model') {
     camera.lowerAlphaLimit = null;
     camera.upperAlphaLimit = null;
     camera.lowerBetaLimit = 0.01;

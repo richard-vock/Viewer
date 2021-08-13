@@ -150,6 +150,8 @@ export class ProcessingService {
   }
 
   public async updateActiveEntityMeshes(meshes: Mesh[], entity: IEntity) {
+    console.log("active Meshes");
+    console.log(meshes);
     this.annotatingFeatured = false;
     await this.setAnnotatingFeatured(entity);
     // TODO - move to babylon load: rendering groups
@@ -418,11 +420,15 @@ export class ProcessingService {
             await this.babylon
               .loadEntity(true, url, mediaType)
               .then(() => {
-                this.updateActiveEntity(newEntity);
-                this.updateActiveEntityMeshes(
-                  this.babylon.entityContainer.meshes as Mesh[],
-                  newEntity,
-                );
+                this.babylon.pointcloudRoot$.subscribe((mesh) => {
+                  if (mesh) {
+                    this.updateActiveEntity(newEntity);
+                    this.updateActiveEntityMeshes(
+                      [mesh,] as Mesh[],
+                      newEntity,
+                    );
+                  }
+                });
               })
               .catch(error => {
                 console.error(error);
@@ -510,7 +516,7 @@ export class ProcessingService {
 
   private async initialiseEntitySettingsData(entity: IEntity) {
     const mediaType = entity.mediaType;
-    if (mediaType === 'model' || mediaType === 'entity' || mediaType === 'image') {
+    if (mediaType === 'cloud' || mediaType === 'model' || mediaType === 'entity' || mediaType === 'image') {
       this.meshSettings = true;
     }
 
@@ -548,6 +554,7 @@ export class ProcessingService {
       settings = settingsFallback;
     } else {
       switch (this.entityMediaType) {
+        case 'cloud':
         case 'entity':
         case 'model': {
           settings = settingsEntity;
@@ -580,7 +587,10 @@ export class ProcessingService {
   // inititalize Annotation Mode
   private async setAnnotatingFeatured(entity: IEntity) {
     const annotatableMediaType =
-      entity.mediaType === 'image' || entity.mediaType === 'entity' || entity.mediaType === 'model';
+      entity.mediaType === 'cloud' ||
+      entity.mediaType === 'image' ||
+      entity.mediaType === 'entity' ||
+      entity.mediaType === 'model';
     if (!this.showAnnotationEditor || !annotatableMediaType || this.fallbackEntityLoaded) {
       if (
         (!annotatableMediaType || this.fallbackEntityLoaded) &&

@@ -5,6 +5,7 @@ import {
   Color3,
   Mesh,
   MeshBuilder,
+  Node,
   Quaternion,
   StandardMaterial,
   Tags,
@@ -108,6 +109,7 @@ export class EntitySettingsService {
     await this.calculateMinMax()
       .then(() => {
         this.initialSize = this.max.subtract(this.min);
+        console.log(`initialSize ${this.initialSize}`);
         this.processing.entityHeight = this.initialSize.y.toFixed(2);
         this.processing.entityWidth = this.initialSize.x.toFixed(2);
         this.processing.entityDepth = this.initialSize.z.toFixed(2);
@@ -128,6 +130,8 @@ export class EntitySettingsService {
       mesh.computeWorldMatrix(true);
       // see if mesh is visible or just a dummy
       const bi = mesh.getBoundingInfo();
+      console.log("bbox");
+      console.log(bi.boundingBox);
       if (bi.diagonalLength !== 0) {
         // compare min max values
         const minimum = bi.boundingBox.minimumWorld;
@@ -167,30 +171,8 @@ export class EntitySettingsService {
     this.center.rotationQuaternion = this.processing.rotationQuaternion;
 
     // position model to origin of the world coordinate system
-    if (this.min.x > 0) {
-      this.center.position.x = -this.min.x;
-    }
-    if (this.min.x < 0) {
-      this.center.position.x = Math.abs(this.min.x);
-    }
-    if (this.min.y > 0) {
-      this.center.position.y = -this.min.y;
-    }
-    if (this.min.y < 0) {
-      this.center.position.y = Math.abs(this.min.y);
-    }
-    if (this.min.z > 0) {
-      this.center.position.z = -this.min.z;
-    }
-    if (this.min.z < 0) {
-      this.center.position.z = Math.abs(this.min.z);
-    }
-
-    this.currentCenterPoint = new Vector3(
-      this.initialSize.x / 2,
-      this.initialSize.y / 2,
-      this.initialSize.z / 2,
-    );
+    this.center.position = this.min.negate();
+    this.currentCenterPoint = this.initialSize.scale(0.5);
 
     // pivot to the center of the (visible) model
     this.center.setPivotPoint(this.initialCenterPoint);
@@ -230,7 +212,9 @@ export class EntitySettingsService {
     }
     const scale = this.entitySettings.scale;
     const isModel =
-      this.processing.entityMediaType === 'model' || this.processing.entityMediaType === 'entity';
+      this.processing.entityMediaType === 'model' ||
+      this.processing.entityMediaType === 'entity' ||
+      this.processing.entityMediaType === 'cloud';
     let diagonalLength = 0;
     if (this.boundingBox) {
       const bi = this.boundingBox.getBoundingInfo();
