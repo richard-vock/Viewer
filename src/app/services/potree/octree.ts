@@ -1,10 +1,14 @@
 import { Color3,
+         Matrix,
          Mesh,
          //MeshBuilder,
+         Ray,
          Scene,
          StandardMaterial,
          Vector3,
+         VertexBuffer,
          VertexData,
+         Viewport,
 } from 'babylonjs';
 import { BehaviorSubject } from 'rxjs';
 import { BBox } from './bounding-box';
@@ -13,7 +17,6 @@ import { Pointcloud } from './pointcloud';
 import { PotreeConfig } from './config';
 
 export class OctreeNode  {
-  public visible : boolean = false;
   public loading : boolean;
   public loaded : boolean;
   public nodeType : number | null;
@@ -32,6 +35,7 @@ export class OctreeNode  {
   public oneTimeDisposeHandlers : { ():void; }[];
   protected children : OctreeNode[] = [];
   protected workers : Worker[] = [];
+  protected _visible : boolean = false;
 
   private id : number;
   static numLoading : number = 0;
@@ -62,6 +66,15 @@ export class OctreeNode  {
 
   getName() : string {
     return this.name;
+  }
+
+  get visible() : boolean {
+    return this._visible;
+  }
+
+  set visible(state : boolean) {
+    this._visible = state;
+    this.mesh?.setEnabled(state);
   }
 
   getChildren() : OctreeNode[] {
@@ -477,6 +490,85 @@ export class Octree {
       }
     }
   }
+
+  public pick(x : number,
+              y : number,
+              ray : Ray,
+              viewMatrix : Matrix,
+              projMatrix : Matrix,
+              viewport : Viewport) : ICloudPickResult | undefined {
+    let stack = [this.root,];
+    const safeRadius = 8;
+    let safeFound : boolean = false;
+    let best : Vector3 | undefined = undefined;
+    let bestDistance = Infinity;
+    // babylonjs crew accidentally forgot how matrix multiplication works
+    const vp = viewMatrix.multiply(projMatrix);
+    while (stack.length > 0) {
+      let node = stack.shift() as OctreeNode;
+
+      if (!node.visible ||
+          !node.mesh ||
+          !ray.intersectsBox(node.getBoundingBox())) {
+        continue;
+      }
+
+      console.log(`considering ${node.name}`);
+      const mesh = node.mesh as Mesh;
+
+      mesh.computeWorldMatrix();
+      const M = mesh.getWorldMatrix();
+      const n = mesh.getTotalVertices();
+      const positions = mesh.getVerticesData(VertexBuffer.PositionKind) as Float32Array;
+      for (let i = 0; i < n; i++) {
+        const pos = new Vector3(positions[i*3+0],
+                                positions[i*3+1],
+                                positions[i*3+2]);
+        const worldPos = Vector3.TransformCoordinates(pos, M);
+        const ndc = Vector3.TransformCoordinates(worldPos, vp);
+        const pxX  = 0.5 * viewport.width * (ndc.x + 1.0);
+        const pxY  = viewport.height - 1.0 - 0.5 * viewport.height * (ndc.y + 1.0);
+        const dx = pxX - x;
+        const dy = pxY - y;
+        const delta = Math.sqrt(dx*dx + dy*dy);
+        if (delta < safeRadius) {
+          if (!safeFound) {
+            // first inside safe radius, automatically consider best
+            // from now on bestDistance refers to z-distance
+            best = worldPos;
+            bestDistance = ndc.z;
+            safeFound = true;
+          } else if (ndc.z < bestDistance) {
+            // in safe radius and closer
+            best = worldPos;
+            bestDistance = ndc.z;
+          }
+        } else {
+          if (!safeFound) {
+            // no points in safe radius yet,
+            // consider screen-space pixel distance to find closest
+            if (delta < bestDistance) {
+              best = worldPos;
+              bestDistance = delta;
+            }
+          }
+        }
+      }
+
+      for (const child of node.getChildren()) {
+        if (child.visible) {
+          stack.push(child);
+        }
+      }
+    }
+
+    return { position: best as Vector3, normal: ray.direction.negate().normalize() };
+  }
+};
+
+export interface ICloudPickResult {
+  position : Vector3,
+  normal : Vector3,
 };
 
 function createChildAABB(aabb : BBox,

@@ -331,9 +331,8 @@ export class AnnotationService {
   // Die Annotationsfunktionalität wird zue aktuellen Entity hinzugefügt
   public initializeAnnotationMode() {
     this.babylon.getCanvas().ondblclick = () => {
-      const scene = this.babylon.getScene();
-      const result = scene.pick(scene.pointerX, scene.pointerY);
-      if (result && result.pickedMesh && result.pickedMesh.isPickable) {
+      const result = this.babylon.pick();
+      if (result && result.pickedMesh && result.isPickable) {
         console.log('Picked', result);
         this.createNewAnnotation(result);
       }
@@ -433,9 +432,9 @@ export class AnnotationService {
               z: result.pickedPoint.z,
             },
             referenceNormal: {
-              x: result.getNormal(true, true).x,
-              y: result.getNormal(true, true).y,
-              z: result.getNormal(true, true).z,
+              x: result.pickedNormal.x,
+              y: result.pickedNormal.y,
+              z: result.pickedNormal.z,
             },
           },
         },

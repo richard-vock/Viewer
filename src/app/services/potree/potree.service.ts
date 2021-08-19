@@ -92,6 +92,7 @@ export class PotreeService {
       if (!node.hasMesh() && (!parent || parent.hasMesh())) {
         if (node.isLoaded() && loadedToGPUThisFrame < 2) {
           node.buildMesh(scene, parent);
+          node.visible = true;
           loadedToGPUThisFrame++;
         } else {
           unloadedGeometry.push(node);

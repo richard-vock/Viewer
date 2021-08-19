@@ -14,13 +14,16 @@ import {
   Engine,
   FxaaPostProcess,
   Layer,
+  Matrix,
   Mesh,
+  Nullable,
   Scene,
   SharpenPostProcess,
   Sound,
   Texture,
   Tools,
   Vector3,
+  Viewport,
   PostProcess,
   ImageProcessingConfiguration,
   PBRMaterial,
@@ -57,6 +60,7 @@ import {
 } from './strategies/render-strategies';
 
 import { PotreeService } from '../potree/potree.service';
+import { Octree } from '../potree/octree';
 
 @Injectable({
   providedIn: 'root',
@@ -80,6 +84,7 @@ export class BabylonService {
   public imageContainer: IImageContainer;
   public entityContainer: I3DEntityContainer;
 
+  private pointcloud? : Octree;
   private pointcloudRoot = new BehaviorSubject<Mesh | undefined>(undefined);
   public pointcloudRoot$ = this.pointcloudRoot.asObservable();
 
@@ -330,6 +335,7 @@ export class BabylonService {
               cloud.rootMesh$.subscribe((mesh) => {
                 if (mesh) {
                   this.pointcloudRoot.next(mesh);
+                  this.pointcloud = cloud;
                 }
               });
               // this.scene.imageProcessingConfiguration.toneMappingEnabled = false;
@@ -466,4 +472,43 @@ export class BabylonService {
 
     return result;
   }
+
+  public pick() : IPickResult | undefined {
+    const scene = this.scene;
+    const cam = scene.activeCamera as Camera;
+    const x = scene.pointerX;
+    const y = scene.pointerY;
+    const ray = scene.createPickingRay(x, y, Matrix.Identity(), cam);
+    const viewMat = cam.getViewMatrix();
+    const projMat = cam.getProjectionMatrix();
+    const viewport = new Viewport(0, 0, this.canvas.width, this.canvas.height);
+    const cloudPick = this.pointcloud?.pick(x, y, ray, viewMat, projMat, viewport);
+    if (cloudPick) {
+      const mesh = this.pointcloud?.root?.mesh as Mesh;
+      return {
+        pickedMesh: mesh,
+        isPickable: true,
+        pickedPoint: cloudPick.position,
+        pickedNormal: cloudPick.normal,
+      };
+    }
+    const otherPick = scene.pickWithRay(ray);
+    if (otherPick) {
+      const mesh = otherPick.pickedMesh as Mesh;
+      return {
+        pickedMesh: mesh,
+        isPickable: mesh.isPickable,
+        pickedPoint: otherPick.pickedPoint,
+        pickedNormal: otherPick.getNormal(true, true),
+      };
+    }
+    return undefined;
+  }
+}
+
+export interface IPickResult {
+  pickedMesh: Mesh;
+  isPickable : boolean;
+  pickedPoint: Nullable<Vector3>,
+  pickedNormal: Nullable<Vector3>,
 }
